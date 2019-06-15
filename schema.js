@@ -15,14 +15,18 @@ const typeDefs = gql`
     user: User
   }
 
-  type Payout {
-    total: Int
-    destination: Rule!
+  type Payout implements Transaction {
+    id: ID!
+    storeDestination: String!
+    cardHolder: CardHolder
+    transactionDescription: String!
+    amount: Int!
+    ruleDestination: Rule!
   }
 
   type Allowance {
     allowanceAmount: Float!
-    recipient: User
+    cardHolder: User
     id: ID!
     payouts: [Payout!]!
     owner: Owner!
@@ -43,7 +47,7 @@ const typeDefs = gql`
     chores: [Chore]
     group: Group
     id: ID!
-    spendingRules: [Rule!]!
+    rules: [Rule!]!
     transactions: [Transaction]
     address: Address
     createdAt: DateTime!
@@ -58,7 +62,7 @@ const typeDefs = gql`
   }
 
   type Chore {
-    cardHolder: User
+    cardHolder: CardHolder
     recurrence: ChoreRecurrenceType
     payouts: [Payout]
     id: ID!
@@ -88,9 +92,9 @@ const typeDefs = gql`
   }
 
   type Group {
-    cards: [User!]!
+    cards: [CardHolder!]!
     id: ID!
-    owners: [User!]!
+    owners: [Owner!]!
     partner: Partner
   }
 
@@ -112,8 +116,7 @@ const typeDefs = gql`
   }
 
   interface Rule {
-    deposits: [Payout]
-    cardHolder: User
+    cardHolder: CardHolder
     balance: Int!
     id: ID!
     transactions: [Transaction]
@@ -121,52 +124,46 @@ const typeDefs = gql`
 
   type SaveRule implements Rule {
     id: ID!
-    payouts: [Payout]
-    cardHolder: User
+    cardHolder: CardHolder
     balance: Int!
-    deposits: [Payout]
     transactions: [Transaction]
   }
 
   type GiveRule implements Rule {
     id: ID!
     charity: String!
-    payouts: [Payout]
-    cardHolder: User
+    cardHolder: CardHolder
     balance: Int!
-    deposits: [Payout]
     transactions: [Transaction]
   }
 
   type SpendRule implements Rule {
     id: ID!
     nameOfStore: String!
-    payouts: [Payout]
-    cardHolder: User
+    cardHolder: CardHolder
     balance: Int!
-    deposits: [Payout]
     transactions: [Transaction]
   }
 
   type ExternalTransaction implements Transaction {
     id: ID!
-    storeName: String!
-    cardHolder: User
+    storeDestination: String!
+    cardHolder: CardHolder
     transactionDescription: String!
     amount: Int!
   }
 
   type InternalTransaction implements Transaction {
     id: ID!
-    rule: Rule!
-    cardHolder: User
+    ruleDestination: Rule!
+    cardHolder: CardHolder
     transactionDescription: String!
     amount: Int!
   }
 
   interface Transaction {
     id: ID!
-    cardHolder: User
+    cardHolder: CardHolder
     transactionDescription: String!
     amount: Int!
   }
@@ -176,7 +173,6 @@ const typeDefs = gql`
     createdAt: DateTime!
     devices: [Device!]!
     id: ID!
-
     updatedAt: DateTime!
     userName: String!
     group: Group
