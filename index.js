@@ -1,18 +1,19 @@
 const express = require("express");
-const graphqlHTTP = require("express-graphql");
+const { ApolloServer, gql } = require("apollo-server-express");
 const { express: voyagerMiddleware } = require("graphql-voyager/middleware");
 const schema = require("./schema");
 
 const app = express();
 const PORT = 3001;
 
-app.use("/graphql", graphqlHTTP(() => ({ schema })));
+const server = new ApolloServer({ schema });
+server.applyMiddleware({ app });
 app.use(
   "/voyager",
   voyagerMiddleware({
     endpointUrl: "/graphql",
     displayOptions: {
-      sortByAlphabet: true
+      sortByAlphabet: false
     }
   })
 );

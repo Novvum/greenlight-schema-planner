@@ -3,102 +3,115 @@ const gql = require("graphql-tag");
 
 const typeDefs = gql`
   type Query {
-    Partner: Partner
+    group: Group!
   }
 
   scalar DateTime
 
-  type Address {
-    city: String!
-    fundingAccount: FundingAccount
+  interface Node {
     id: ID!
-    user: User
   }
 
-  type Payout implements Transaction {
-    id: ID!
-    storeDestination: String!
-    cardHolder: CardHolder
-    transactionDescription: String!
-    amount: Int!
-    ruleDestination: Rule!
-  }
-
-  type Allowance {
-    allowanceAmount: Float!
-    cardHolder: User
-    id: ID!
-    payouts: [Payout!]!
-    owner: Owner!
-  }
-
-  type Approver {
-    id: ID!
-    address: Address
-    createdAt: DateTime!
-    devices: [Device!]!
-    updatedAt: DateTime!
-    userName: String!
-    group: Group
-  }
-
-  type CardHolder implements User {
-    allowance: Allowance
-    chores: [Chore]
-    group: Group
-    id: ID!
-    rules: [Rule!]!
-    transactions: [Transaction]
-    address: Address
-    createdAt: DateTime!
-    devices: [Device!]!
-    updatedAt: DateTime!
-    userName: String!
-  }
-
-  enum ChoreRecurrenceType {
+  enum TransferRecurrenceType {
     ONE_TIME
     WEEKLY
+    MONTHLY
   }
-
-  type Chore {
+  """
+  A FundingRule is what determines how money goes from a GroupAdmin to a CardHolder. i.e. allowances, chores, etc.
+  """
+  interface FundingRule {
+    id: ID!
     cardHolder: CardHolder
-    recurrence: ChoreRecurrenceType
-    payouts: [Payout]
+    recurrence: TransferRecurrenceType!
+    transfers: [FundTransfer!]!
+    createdBy: GroupAdmin!
+  }
+  type Chore implements Node & FundingRule & TransactionSource {
     id: ID!
-    owner: Owner!
+    cardHolder: CardHolder
+    recurrence: TransferRecurrenceType!
+    transfers: [FundTransfer!]!
+    createdBy: GroupAdmin!
   }
 
-  type Device {
+  type Allowance implements Node & FundingRule & TransactionSource {
     id: ID!
-    user: User
+    amount: Float!
+    recurrence: TransferRecurrenceType!
+    cardHolder: CardHolder
+    transfers: [FundTransfer!]!
+    createdBy: GroupAdmin!
   }
 
-  type Funder implements User {
-    fundingAccounts: [FundingAccount!]!
+  """
+  Any type that implements this interface indicates that it can be the source of a transaction.
+  """
+  interface TransactionSource {
+    id: ID!
+  }
+
+  """
+  Any type that implements this interface indicates that it can be the destination of a transaction.
+  """
+  interface TransactionDestination {
+    id: ID!
+  }
+  interface Transaction {
+    id: ID!
+    transactionDate: DateTime!
+    source: TransactionSource!
+    destination: TransactionDestination!
+    cardHolder: CardHolder
+    description: String!
+    amount: Int!
+  }
+  type ExternalTransaction implements Node & Transaction {
+    id: ID!
+    source: TransactionSource!
+    destination: Store!
+    transactionDate: DateTime!
+    cardHolder: CardHolder
+    description: String!
+    amount: Int!
+  }
+  """
+  A FundTransfer is a transaction among CardAccounts and TransferRules
+  """
+  type FundTransfer implements Node & Transaction {
+    id: ID!
+    source: FundingAccount!
+    destination: TransactionDestination!
+    transactionDate: DateTime!
+    cardHolder: CardHolder
+    description: String!
+    amount: Int!
+    rule: FundingRule!
+  }
+
+  type FundingAccount implements Node & TransactionSource {
     id: ID!
     address: Address
-    createdAt: DateTime!
-    devices: [Device!]!
-    updatedAt: DateTime!
-    userName: String!
-    group: Group
+    createdBy: GroupAdmin
+    transfers: [FundTransfer!]!
   }
 
-  type FundingAccount {
-    address: Address
-    funder: Funder
+  type Group implements Node {
     id: ID!
-  }
-
-  type Group {
-    cards: [CardHolder!]!
-    id: ID!
-    owners: [Owner!]!
+    cardHolders: [CardHolder!]!
+    admins: [GroupAdmin!]!
     partner: Partner
+    fundingAccounts: [FundingAccount!]!
+    fundingRules: [FundingRule!]!
   }
 
-  type Owner implements User {
+  enum GroupAdminRole {
+    OWNER
+    FUNDER
+    APPROVER
+  }
+  
+  type GroupAdmin implements Node & User {
     id: ID!
     address: Address
     createdAt: DateTime!
@@ -106,30 +119,44 @@ const typeDefs = gql`
     updatedAt: DateTime!
     group: Group
     userName: String!
-    chores: [Chore]
-    allowances: [Allowance]
+    fundingRules: [FundingRule!]!
+    roles: [GroupAdminRole]
   }
 
-  type Partner {
+
+  type Partner implements Node {
+    id: ID!
     groups: [Group!]!
-    id: ID!
   }
 
-  interface Rule {
+  type CardHolder implements Node & User {
+    id: ID!
+    fundingRules: [FundingRule!]!
+    group: Group
+    accounts: [CardAccount!]!
+    transactions: [Transaction]
+    address: Address
+    createdAt: DateTime!
+    devices: [Device!]!
+    updatedAt: DateTime!
+    userName: String!
+  }
+
+  interface CardAccount {
+    id: ID!
     cardHolder: CardHolder
     balance: Int!
-    id: ID!
     transactions: [Transaction]
   }
 
-  type SaveRule implements Rule {
+  type CardSavingsAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     cardHolder: CardHolder
     balance: Int!
     transactions: [Transaction]
   }
 
-  type GiveRule implements Rule {
+  type CardDonationAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     charity: String!
     cardHolder: CardHolder
@@ -137,47 +164,35 @@ const typeDefs = gql`
     transactions: [Transaction]
   }
 
-  type SpendRule implements Rule {
+  type CardSpendingAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     nameOfStore: String!
     cardHolder: CardHolder
     balance: Int!
-    transactions: [Transaction]
+    transactions: [Transaction!]!
   }
-
-  type ExternalTransaction implements Transaction {
+  type Store implements Node & TransactionDestination {
     id: ID!
-    storeDestination: String!
-    cardHolder: CardHolder
-    transactionDescription: String!
-    amount: Int!
-  }
-
-  type InternalTransaction implements Transaction {
-    id: ID!
-    ruleDestination: Rule!
-    cardHolder: CardHolder
-    transactionDescription: String!
-    amount: Int!
-  }
-
-  interface Transaction {
-    id: ID!
-    cardHolder: CardHolder
-    transactionDescription: String!
-    amount: Int!
+    name: String!
   }
 
   interface User {
     address: Address
     createdAt: DateTime!
     devices: [Device!]!
-    id: ID!
     updatedAt: DateTime!
     userName: String!
     group: Group
   }
-
+  type Device implements Node {
+    id: ID!
+    user: User
+  }
+  type Address {
+    city: String!
+    fundingAccount: FundingAccount
+    user: User
+  }
   schema {
     query: Query
   }
