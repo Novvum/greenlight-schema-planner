@@ -2168,6 +2168,11 @@ normalize-scroll-left@^0.1.2:
   resolved "https://registry.npmjs.org/normalize-scroll-left/-/normalize-scroll-left-0.1.2.tgz#6b79691ba79eb5fb107fa5edfbdc06b55caee2aa"
   integrity sha512-F9YMRls0zCF6BFIE2YnXDRpHPpfd91nOIaNdDgrx5YMoPLo8Wqj+6jNXHQsYBavJeXP4ww8HCt0xQAKc5qk2Fg==
 
+now@^15.5.0:
+  version "15.5.0"
+  resolved "https://registry.npmjs.org/now/-/now-15.5.0.tgz#8010ca015774588c6ed1963923a30a17156cf7cf"
+  integrity sha512-H7QB5TMnhvd/PQQTZ9TT4ngZlTjCcBEKSCacNAwl/HG3yXr6WjElJmNlSHuUlCsnuyVFVbV6PfkyBeSa7swTSQ==
+
 npm-bundled@^1.0.1:
   version "1.0.6"
   resolved "https://registry.npmjs.org/npm-bundled/-/npm-bundled-1.0.6.tgz#e7ba9aadcef962bb61248f91721cd932b3fe6bdd"

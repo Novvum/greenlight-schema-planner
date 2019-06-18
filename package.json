@@ -16,6 +16,7 @@
     "graphql-voyager": "^1.0.0-rc.27"
   },
   "devDependencies": {
-    "nodemon": "^1.19.1"
+    "nodemon": "^1.19.1",
+    "now": "^15.5.0"
   }
 }
