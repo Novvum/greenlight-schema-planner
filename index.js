@@ -5,7 +5,7 @@ const schema = require("./schema");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const GRAPHQL_PATH = "/";
+const GRAPHQL_PATH = "/graphql";
 const server = new ApolloServer({
   schema,
   introspection: true,

@@ -1,9 +1,7 @@
 {
   "version": 2,
+  "alias": "greenlight-schema",
   "name": "greenlight-schema-planner",
   "builds": [{ "src": "index.js", "use": "@now/node-server" }],
-  "routes": [
-    { "src": "/graphql", "dest": "index.js" },
-    { "src": "/voyager", "dest": "index.js" }
-  ]
+  "routes": [{ "src": "/.*", "dest": "index.js" }]
 }
