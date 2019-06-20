@@ -236,7 +236,7 @@ const typeDefs = gql`
   type FundDistribution implements Node & Transaction {
     id: ID!
     source: GroupFundingAccount!
-    destination: GroupFundingAccount!
+    destination: TransactionDestination!
     transactionDate: DateTime!
     description: String!
     amount: Int!
