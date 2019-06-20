@@ -35,7 +35,7 @@ const typeDefs = gql`
   }
 
   """The group's wallet that holds a balance to be transferred to a sub-account."""
-  union GroupFundTransfer = FundTransfer | InternalTransfer
+  union GroupFundTransfer = FundTransfer | FundDistribution
   type GroupFundingAccount implements Node & Account & TransactionSource & TransactionDestination {
     id: ID!
     balance: Int!
@@ -122,7 +122,6 @@ const typeDefs = gql`
     balance: Int!
     transactions: [Transaction]
   }
-
   type CardSpendingAccount implements Node & Account & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     nameOfStore: String!
@@ -153,7 +152,7 @@ const typeDefs = gql`
     id: ID!
     cardHolder: CardHolder
     recurrence: TransferRecurrenceType!
-    transfers: [FundTransfer!]!
+    transfers: [FundDistribution!]!
     createdBy: GroupAdmin!
   }
   
@@ -161,7 +160,7 @@ const typeDefs = gql`
     id: ID!
     cardHolder: CardHolder
     recurrence: TransferRecurrenceType!
-    transfers: [FundTransfer!]!
+    transfers: [FundDistribution!]!
     createdBy: GroupAdmin!
   }
 
@@ -170,7 +169,7 @@ const typeDefs = gql`
     amount: Float!
     recurrence: TransferRecurrenceType!
     cardHolder: CardHolder
-    transfers: [FundTransfer!]!
+    transfers: [FundDistribution!]!
     createdBy: GroupAdmin!
   }
 
@@ -229,6 +228,20 @@ const typeDefs = gql`
     description: String!
     amount: Int!
     initiatedBy: GroupAdminUser!
+  }
+
+  """
+  A FundDistribution is a transfer of money from a GroupFundingAccount to a CardAccount.
+  """
+  type FundDistribution implements Node & Transaction {
+    id: ID!
+    source: GroupFundingAccount!
+    destination: GroupFundingAccount!
+    transactionDate: DateTime!
+    description: String!
+    amount: Int!
+    initiatedBy: GroupAdminUser!
+    rule: FundingRule!
   }
 
   type Device implements Node {
