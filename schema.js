@@ -4,6 +4,7 @@ const gql = require("graphql-tag");
 const typeDefs = gql`
   type Query {
     group: Group!
+    cardHolder(id: ID!): CardHolder
   }
 
   scalar DateTime
@@ -12,12 +13,17 @@ const typeDefs = gql`
     id: ID!
   }
 
+  interface Account {
+    balance: Int!
+  }
+
   type Group implements Node {
     id: ID!
     cardHolders: [CardHolder!]!
     admins: [GroupAdmin!]!
     fundingSources: [FundingSource!]!
     fundingRules: [FundingRule!]!
+    fundingAccount: GroupFundingAccount!
   }
 
   """The bank account debit card used for transferring money to cardholders."""
@@ -28,6 +34,13 @@ const typeDefs = gql`
     transfers: [FundTransfer!]!
   }
 
+  """The group's wallet that holds a balance to be transferred to a sub-account."""
+  union GroupFundTransfer = FundTransfer | InternalTransfer
+  type GroupFundingAccount implements Node & Account & TransactionSource & TransactionDestination {
+    id: ID!
+    balance: Int!
+    transactions: [GroupFundTransfer!]!
+  }
 
   # Users
   """
@@ -47,10 +60,11 @@ const typeDefs = gql`
     FUNDER
     APPROVER
   }
-  type GroupAdminUser implements Node & User {
+  type GroupAdminUser implements Node & User & GroupAdmin {
     id: ID!
     address: Address
     createdAt: DateTime!
+    fundingSources: [FundingSource!]!
     devices: [Device!]!
     updatedAt: DateTime!
     group: Group
@@ -59,13 +73,16 @@ const typeDefs = gql`
     roles: [GroupAdminUserRole]
   }
 
-  type FinancialInstitution implements Node {
+  type FinancialInstitution implements Node & GroupAdmin {
     id: ID!
     name: String!
+    fundingSources: [FundingSource!]!
   }
 
   """A group admin can be either a GroupAdminUser or a FinancialInstitution"""
-  union GroupAdmin = GroupAdminUser | FinancialInstitution
+  interface GroupAdmin {
+    fundingSources: [FundingSource!]!
+  }
 
   type CardHolder implements Node & User {
     id: ID!
@@ -91,14 +108,14 @@ const typeDefs = gql`
     transactions: [Transaction]
   }
 
-  type CardSavingsAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
+  type CardSavingsAccount implements Node & Account & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     cardHolder: CardHolder
     balance: Int!
     transactions: [Transaction]
   }
 
-  type CardDonationAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
+  type CardDonationAccount implements Node & Account & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     charity: String!
     cardHolder: CardHolder
@@ -106,7 +123,7 @@ const typeDefs = gql`
     transactions: [Transaction]
   }
 
-  type CardSpendingAccount implements Node & CardAccount & TransactionSource & TransactionDestination {
+  type CardSpendingAccount implements Node & Account & CardAccount & TransactionSource & TransactionDestination {
     id: ID!
     nameOfStore: String!
     cardHolder: CardHolder
@@ -170,48 +187,48 @@ const typeDefs = gql`
   interface TransactionDestination {
     id: ID!
   }
+  union TransactionInitiator = FinancialInstitution | GroupAdminUser | CardHolder
   interface Transaction {
     id: ID!
     transactionDate: DateTime!
     source: TransactionSource!
     destination: TransactionDestination!
-    cardHolder: CardHolder
     description: String!
     amount: Int!
+    initiatedBy: TransactionInitiator!
   }
   type ExternalTransaction implements Node & Transaction {
     id: ID!
     source: CardSpendingAccount!
     destination: Store!
     transactionDate: DateTime!
-    cardHolder: CardHolder
     description: String!
     amount: Int!
+    initiatedBy: CardHolder!
   }
   """
-  An InternalTransfer is a transfer of money from a one CardAccount to another.
+  An InternalTransfer is a transfer of money from a one Account to another.
   """
   type InternalTransfer implements Node & Transaction {
     id: ID!
     source: TransactionSource!
     destination: TransactionDestination!
     transactionDate: DateTime!
-    cardHolder: CardHolder
     description: String!
     amount: Int!
+    initiatedBy: TransactionInitiator!
   }
   """
-  A FundTransfer is a transfer of money from a FundingSource to a CardAccount.
+  A FundTransfer is a transfer of money from a FundingSource to a GroupFundingAccount.
   """
   type FundTransfer implements Node & Transaction {
     id: ID!
     source: FundingSource!
-    destination: TransactionDestination!
+    destination: GroupFundingAccount!
     transactionDate: DateTime!
-    cardHolder: CardHolder
     description: String!
     amount: Int!
-    rule: FundingRule!
+    initiatedBy: GroupAdminUser!
   }
 
   type Device implements Node {
