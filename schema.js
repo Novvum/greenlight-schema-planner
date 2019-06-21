@@ -21,7 +21,6 @@ const typeDefs = gql`
     id: ID!
     cardHolders: [CardHolder!]!
     admins: [GroupAdmin!]!
-    fundingSources: [FundingSource!]!
     fundingRules: [FundingRule!]!
     fundingAccount: GroupFundingAccount!
   }
@@ -250,7 +249,6 @@ const typeDefs = gql`
   }
   type Address {
     city: String!
-    fundingSource: FundingSource
     user: User
   }
   schema {
