@@ -4,7 +4,7 @@ const gql = require("graphql-tag");
 const typeDefs = gql`
   type Query {
     family: Family!
-    child(id: ID!): Child
+    child(id: ID!): ChildUser
   }
 
   scalar DateTime
@@ -13,41 +13,36 @@ const typeDefs = gql`
     id: ID!
   }
 
-  interface Account {
-    balance: Int!
-  }
-
   type Family implements Node {
     id: ID!
-    children: [Child!]!
-    parents: [FamilyAdmin!]!
+    children: [ChildUser!]!
+    admins: [FamilyAdmin!]!
     fundingRules: [FundingRule!]!
-    fundingAccount: FamilyFundingAccount!
   }
 
   """
   The bank account debit Greenlight used for transferring money to children.
   """
-  type FundingSource implements Node & TransactionSource {
+  type ExternalFundingAccount implements Node & FundingAccount {
     id: ID!
     address: Address
     createdBy: FamilyAdmin
-    transfers: [FundTransfer!]!
+    transfers: [ExternalFundingAccountTransfer!]!
   }
 
   """
   The Family's wallet that holds a balance to be transferred to a sub-account.
   """
-  union FamilyFundTransfer = FundTransfer | FundDistribution
-  type FamilyFundingAccount implements Node & Account & TransactionSource & TransactionDestination {
+  union ParentFundTransfer = ExternalFundingAccountTransfer | FundDistribution
+  type ParentWallet implements Node & FundingAccount {
     id: ID!
     balance: Int!
-    transactions: [FamilyFundTransfer!]!
+    transactions: [ParentFundTransfer!]!
   }
 
   # Users
   """
-  The User interface will be implemented by the various user types. i.e. Family, parents, and children
+  The User interface will be implemented by the various user types. i.e. Family, admins, and children
   """
   interface User {
     address: Address
@@ -63,11 +58,12 @@ const typeDefs = gql`
     FUNDER
     APPROVER
   }
-  type Parent implements Node & User & FamilyAdmin {
+  type ParentUser implements Node & User & FamilyAdmin {
     id: ID!
     address: Address
     createdAt: DateTime!
-    fundingSources: [FundingSource!]!
+    externalFundingAccounts: [ExternalFundingAccount!]!
+    wallet: ParentWallet
     devices: [Device!]!
     updatedAt: DateTime!
     family: Family
@@ -79,21 +75,21 @@ const typeDefs = gql`
   type FinancialInstitution implements Node & FamilyAdmin {
     id: ID!
     name: String!
-    fundingSources: [FundingSource!]!
+    externalFundingAccounts: [ExternalFundingAccount!]!
   }
 
   """
-  A Family FamilyAdmin can be either a Parent or a FinancialInstitution
+  A Family FamilyAdmin can be either a ParentUser or a FinancialInstitution
   """
   interface FamilyAdmin {
-    fundingSources: [FundingSource!]!
+    externalFundingAccounts: [ExternalFundingAccount!]!
   }
 
-  type Child implements Node & User {
+  type ChildUser implements Node & User {
     id: ID!
     fundingRules: [FundingRule!]!
     family: Family
-    accounts: [GreenlightAccount!]!
+    account: GreenlightAccount!
     transactions: [Transaction]
     address: Address
     createdAt: DateTime!
@@ -104,44 +100,82 @@ const typeDefs = gql`
 
   # Greenlight
   """
-  A GreenlightAccount is an entity that holds a balance of money for the Child. In this case, it could be a savings account, spending account, etc.
+  A GreenlightAccount is an entity that holds a balance of money for the ChildUser. In this case, it could be a savings account, spending account, etc.
   """
-  interface GreenlightAccount {
+  type GreenlightAccount implements Node {
     id: ID!
-    child: Child
+    child: ChildUser
+    spend: SpendSubAccount
+    save: SaveSubAccount
+    give: GiveSubAccount
+    earn: EarnSubAccount
+    invest: InvestSubAccount
+  }
+
+  interface SubAccount {
+    greenlightAccount: GreenlightAccount!
     balance: Int!
     transactions: [Transaction]
   }
 
-  type GreenlightSavingsAccount implements Node & Account & GreenlightAccount & TransactionSource & TransactionDestination {
+  type SaveSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    child: Child
+    child: ChildUser
     balance: Int!
     transactions: [Transaction]
+    greenlightAccount: GreenlightAccount!
   }
 
-  type GreenlightDonationAccount implements Node & Account & GreenlightAccount & TransactionSource & TransactionDestination {
+  type GiveSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
     charity: String!
-    child: Child
+    child: ChildUser
     balance: Int!
     transactions: [Transaction]
+    rules: [GreenlightRule!]!
+    greenlightAccount: GreenlightAccount!
   }
-  type GreenlightSpendingAccount implements Node & Account & GreenlightAccount & TransactionSource & TransactionDestination {
+  type SpendSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
     nameOfStore: String!
-    child: Child
+    child: ChildUser
     balance: Int!
     transactions: [Transaction!]!
-    rule: SpendingRule!
+    rules: [GreenlightRule!]!
+    greenlightAccount: GreenlightAccount!
   }
-  type SpendingRule implements Node {
+  type EarnSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
+    child: ChildUser
+    balance: Int!
+    transactions: [Transaction]
+    greenlightAccount: GreenlightAccount!
+  }
+  type InvestSubAccount implements Node & SubAccount & FundingAccount {
+    id: ID!
+    child: ChildUser
+    balance: Int!
+    transactions: [Transaction]
+    greenlightAccount: GreenlightAccount!
+  }
+
+  type GreenlightRule implements Node {
+    id: ID!
+  }
+
+  type FundingRequest implements Node & Transaction {
+    id: ID!
+    transactionDate: DateTime!
+    source: FundingAccount!
+    destination: FundingAccount!
+    description: String!
+    amount: Int!
+    initiatedBy: ChildUser!
   }
   """
   The location where a Greenlight can be used
   """
-  type Store implements Node & TransactionDestination {
+  type PaymentRecipient implements Node & FundingAccount {
     id: ID!
     name: String!
   }
@@ -153,101 +187,95 @@ const typeDefs = gql`
   }
 
   """
-  A FundingRule is what determines how money goes from a FundingSource to a Child. i.e. allowances, chores, etc.
+  A FundingRule is what determines how money goes from a ExternalFundingAccount to a ChildUser. i.e. allowances, chores, etc.
   """
   interface FundingRule {
     id: ID!
-    child: Child
+    child: ChildUser
     recurrence: TransferRecurrenceType!
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
   }
 
-  type Chore implements Node & FundingRule & TransactionSource {
+  type Chore implements Node & FundingRule & FundingAccount {
     id: ID!
-    child: Child
+    child: ChildUser
     recurrence: TransferRecurrenceType!
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
   }
 
-  type Allowance implements Node & FundingRule & TransactionSource {
+  type Allowance implements Node & FundingRule & FundingAccount {
     id: ID!
     amount: Float!
     recurrence: TransferRecurrenceType!
-    child: Child
+    child: ChildUser
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
   }
 
   """
-  Any type that implements this interface indicates that it can be the source of a transaction.
+  Any type that implements this interface indicates that it can be either the source or destination of a transaction.
   """
-  interface TransactionSource {
+  interface FundingAccount {
     id: ID!
   }
 
-  """
-  Any type that implements this interface indicates that it can be the destination of a transaction.
-  """
-  interface TransactionDestination {
-    id: ID!
-  }
-  union TransactionInitiator = FinancialInstitution | Parent | Child
+  union TransactionInitiator = FinancialInstitution | ParentUser | ChildUser
   interface Transaction {
     id: ID!
     transactionDate: DateTime!
-    source: TransactionSource!
-    destination: TransactionDestination!
+    source: FundingAccount!
+    destination: FundingAccount!
     description: String!
     amount: Int!
     initiatedBy: TransactionInitiator!
   }
-  type ExternalTransaction implements Node & Transaction {
+  type ExternalPayment implements Node & Transaction {
     id: ID!
-    source: GreenlightSpendingAccount!
-    destination: Store!
+    source: SpendSubAccount!
+    destination: PaymentRecipient!
     transactionDate: DateTime!
     description: String!
     amount: Int!
-    initiatedBy: Child!
+    initiatedBy: ChildUser!
   }
   """
-  An InternalTransfer is a transfer of money from a one Account to another.
+  An SubAccountTransfer is a transfer of money from a o to another.
   """
-  type InternalTransfer implements Node & Transaction {
+  type SubAccountTransfer implements Node & Transaction {
     id: ID!
-    source: TransactionSource!
-    destination: TransactionDestination!
+    source: FundingAccount!
+    destination: FundingAccount!
     transactionDate: DateTime!
     description: String!
     amount: Int!
     initiatedBy: TransactionInitiator!
   }
   """
-  A FundTransfer is a transfer of money from a FundingSource to a FamilyFundingAccount.
+  A ExternalFundingAccountTransfer is a transfer of money between a ExternalFundingAccount and a ParentWallet.
   """
-  type FundTransfer implements Node & Transaction {
+  type ExternalFundingAccountTransfer implements Node & Transaction {
     id: ID!
-    source: FundingSource!
-    destination: FamilyFundingAccount!
+    source: FundingAccount!
+    destination: FundingAccount!
     transactionDate: DateTime!
     description: String!
     amount: Int!
-    initiatedBy: Parent!
+    initiatedBy: ParentUser!
   }
 
   """
-  A FundDistribution is a transfer of money from a FamilyFundingAccount to a GreenlightAccount.
+  A FundDistribution is a transfer of money from a ParentWallet to a SubAccount.
   """
   type FundDistribution implements Node & Transaction {
     id: ID!
-    source: FamilyFundingAccount!
-    destination: TransactionDestination!
+    source: FundingAccount!
+    destination: FundingAccount!
     transactionDate: DateTime!
     description: String!
     amount: Int!
-    initiatedBy: Parent!
+    initiatedBy: ParentUser!
     rule: FundingRule!
   }
 
