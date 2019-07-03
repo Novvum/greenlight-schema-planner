@@ -159,7 +159,7 @@ const typeDefs = gql`
     greenlightAccount: GreenlightAccount!
   }
 
-  type GreenlightRule implements Node {
+  interface GreenlightRule {
     id: ID!
   }
 
