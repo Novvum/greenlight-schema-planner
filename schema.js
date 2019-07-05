@@ -128,7 +128,6 @@ const typeDefs = gql`
 
   type GiveSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    charity: String!
     child: ChildUser
     balance: Int!
     transactions: [Transaction]
@@ -137,7 +136,6 @@ const typeDefs = gql`
   }
   type SpendSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    nameOfStore: String!
     child: ChildUser
     balance: Int!
     transactions: [Transaction!]!
