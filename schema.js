@@ -157,9 +157,47 @@ const typeDefs = gql`
     greenlightAccount: GreenlightAccount!
   }
 
-  interface GreenlightRule {
-    id: ID!
+  enum SpendTypes {
+    ANYWHERE
+    GAS
+    ATM
+    RESTAURANT
+    CUSTOM
+    GIVE
   }
+
+  enum ChangeOptions {
+    STAY
+    SAVINGS
+    RETURN
+  }
+  enum GasOptions {
+    PUMP
+  }
+
+  type GreenlightRule {
+    id: ID!
+    spendType: [SpendTypes!]!
+    balance: Int!
+    overages: Boolean
+    changeOptions: [ChangeOptions]
+    gasOptions: [GasOptions]
+  }
+
+  # type SpendGreenlightRule implements Node & GreenlightRule {
+  #   id: ID!
+  #   spendType: [SpendTypes!]!
+  #   balance: Int!
+  #   overages: Boolean
+  #   changeOptions: [ChangeOptions]
+  #   gasOptions: [GasOptions]
+  # }
+
+  # type GiveGreenlightRule implements Node & GreenlightRule {
+  #   id: ID!
+  #   charity: String!
+  #   balance: Int!
+  # }
 
   type FundingRequest implements Node & Transaction {
     id: ID!
