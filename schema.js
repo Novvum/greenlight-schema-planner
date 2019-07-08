@@ -124,6 +124,8 @@ const typeDefs = gql`
     balance: Int!
     transactions: [Transaction]
     greenlightAccount: GreenlightAccount!
+    goals: [SavingsGoal]
+    interestRate: Float!
   }
 
   type GiveSubAccount implements Node & SubAccount & FundingAccount {
@@ -157,7 +159,7 @@ const typeDefs = gql`
     greenlightAccount: GreenlightAccount!
   }
 
-  enum SpendTypes {
+  enum GreenlightRuleNames {
     ANYWHERE
     GAS
     ATM
@@ -171,27 +173,33 @@ const typeDefs = gql`
     SAVINGS
     RETURN
   }
-  enum GasOptions {
-    PUMP
+
+  interface GreenlightRule {
+    id: ID!
+    name: [GreenlightRuleNames!]!
+    balance: Int!
   }
 
-  type GreenlightRule {
+  type Options {
+    name: String
+    value: String
+  }
+
+  type SpendGreenlightRule implements Node & GreenlightRule {
     id: ID!
-    spendType: [SpendTypes!]!
+    name: [GreenlightRuleNames!]!
     balance: Int!
     overages: Boolean
     changeOptions: [ChangeOptions]
-    gasOptions: [GasOptions]
+    options: [Options]
   }
 
-  # type SpendGreenlightRule implements Node & GreenlightRule {
-  #   id: ID!
-  #   spendType: [SpendTypes!]!
-  #   balance: Int!
-  #   overages: Boolean
-  #   changeOptions: [ChangeOptions]
-  #   gasOptions: [GasOptions]
-  # }
+  type SavingsGoal implements Node {
+    id: ID!
+    name: String!
+    balance: Int!
+    goalAmount: Int!
+  }
 
   # type GiveGreenlightRule implements Node & GreenlightRule {
   #   id: ID!
