@@ -159,7 +159,7 @@ const typeDefs = gql`
     greenlightAccount: GreenlightAccount!
   }
 
-  enum GreenlightRuleNames {
+  enum GreenlightRuleName {
     ANYWHERE
     GAS
     ATM
@@ -168,7 +168,7 @@ const typeDefs = gql`
     GIVE
   }
 
-  enum ChangeOptions {
+  enum ChangeOption {
     STAY
     SAVINGS
     RETURN
@@ -176,22 +176,36 @@ const typeDefs = gql`
 
   interface GreenlightRule {
     id: ID!
-    name: [GreenlightRuleNames!]!
+    name: [GreenlightRuleName!]!
     balance: Int!
   }
 
-  type Options {
+  interface GreenlightRuleOption {
+    name: String
+  }
+
+  type StringAttribute implements GreenlightRuleOption {
     name: String
     value: String
   }
 
+  type IntAttribute implements GreenlightRuleOption {
+    name: String
+    value: Int
+  }
+
+  type BooleanAttribute implements GreenlightRuleOption {
+    name: String
+    value: Boolean
+  }
+
   type SpendGreenlightRule implements Node & GreenlightRule {
     id: ID!
-    name: [GreenlightRuleNames!]!
+    name: [GreenlightRuleName!]!
     balance: Int!
     overages: Boolean
-    changeOptions: [ChangeOptions]
-    options: [Options]
+    changeOptions: [ChangeOption]
+    options: [GreenlightRuleOption]
   }
 
   type SavingsGoal implements Node {
