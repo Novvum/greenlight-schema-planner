@@ -141,7 +141,7 @@ const typeDefs = gql`
     child: ChildUser
     balance: Int!
     transactions: [Transaction!]!
-    rules: [GreenlightRule!]!
+    rules: [SpendGreenlightRule!]!
     greenlightAccount: GreenlightAccount!
   }
   type EarnSubAccount implements Node & SubAccount & FundingAccount {
@@ -180,32 +180,33 @@ const typeDefs = gql`
     balance: Int!
   }
 
-  interface GreenlightRuleOption {
+  interface Attribute {
     name: String
   }
 
-  type StringAttribute implements GreenlightRuleOption {
+  type StringAttribute implements Attribute {
     name: String
     value: String
   }
 
-  type IntAttribute implements GreenlightRuleOption {
+  type IntAttribute implements Attribute {
     name: String
     value: Int
   }
 
-  type BooleanAttribute implements GreenlightRuleOption {
+  type BooleanAttribute implements Attribute {
     name: String
     value: Boolean
   }
 
   type SpendGreenlightRule implements Node & GreenlightRule {
     id: ID!
+    sub_account: SpendSubAccount!
     name: [GreenlightRuleName!]!
     balance: Int!
     overages: Boolean
     changeOptions: [ChangeOption]
-    options: [GreenlightRuleOption]
+    options: [Attribute]
   }
 
   type SavingsGoal implements Node {
