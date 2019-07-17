@@ -17,7 +17,6 @@ const typeDefs = gql`
     id: ID!
     children: [ChildUser!]!
     admins: [FamilyAdmin!]!
-    fundingRules: [FundingRule!]!
   }
 
   """
@@ -68,7 +67,6 @@ const typeDefs = gql`
     updatedAt: DateTime!
     family: Family
     userName: String!
-    fundingRules: [FundingRule!]!
     roles: [ParentRole]
   }
 
@@ -87,15 +85,13 @@ const typeDefs = gql`
 
   type ChildUser implements Node & User {
     id: ID!
-    fundingRules: [FundingRule!]!
+    userName: String!
     family: Family
     account: GreenlightAccount!
-    transactions: [Transaction]
     address: Address
     createdAt: DateTime!
     devices: [Device!]!
     updatedAt: DateTime!
-    userName: String!
   }
 
   # Greenlight
@@ -108,7 +104,7 @@ const typeDefs = gql`
     spend: SpendSubAccount
     save: SaveSubAccount
     give: GiveSubAccount
-    earn: EarnSubAccount
+    fundingrules: [FundingRule!]!
     invest: InvestSubAccount
   }
 
@@ -120,7 +116,7 @@ const typeDefs = gql`
 
   type SaveSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    child: ChildUser
+    child: ChildUser!
     balance: Int!
     transactions: [Transaction]
     greenlightAccount: GreenlightAccount!
@@ -130,30 +126,23 @@ const typeDefs = gql`
 
   type GiveSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    child: ChildUser
+    child: ChildUser!
     balance: Int!
     transactions: [Transaction]
-    rules: [Rule!]!
     greenlightAccount: GreenlightAccount!
   }
   type SpendSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    child: ChildUser
+    child: ChildUser!
     balance: Int!
     transactions: [Transaction!]!
     rules: [SpendingRule!]!
     greenlightAccount: GreenlightAccount!
   }
-  type EarnSubAccount implements Node & SubAccount & FundingAccount {
-    id: ID!
-    child: ChildUser
-    balance: Int!
-    transactions: [Transaction]
-    greenlightAccount: GreenlightAccount!
-  }
+
   type InvestSubAccount implements Node & SubAccount & FundingAccount {
     id: ID!
-    child: ChildUser
+    child: ChildUser!
     balance: Int!
     transactions: [Transaction]
     greenlightAccount: GreenlightAccount!
@@ -250,7 +239,7 @@ const typeDefs = gql`
   """
   interface FundingRule {
     id: ID!
-    child: ChildUser
+    account: GreenlightAccount!
     recurrence: TransferRecurrenceType!
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
@@ -258,7 +247,7 @@ const typeDefs = gql`
 
   type Chore implements Node & FundingRule & FundingAccount {
     id: ID!
-    child: ChildUser
+    account: GreenlightAccount!
     recurrence: TransferRecurrenceType!
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
@@ -268,7 +257,7 @@ const typeDefs = gql`
     id: ID!
     amount: Float!
     recurrence: TransferRecurrenceType!
-    child: ChildUser
+    account: GreenlightAccount!
     transfers: [FundDistribution!]!
     createdBy: FamilyAdmin!
   }
