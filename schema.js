@@ -62,7 +62,7 @@ const typeDefs = gql`
     id: ID!
     address: Address
     createdAt: DateTime!
-    externalFundingAccounts: [ExternalFundingAccount!]!
+    fundingAccounts: [ExternalFundingAccount!]!
     wallet: ParentWallet
     devices: [Device!]!
     updatedAt: DateTime!
@@ -75,14 +75,14 @@ const typeDefs = gql`
   type FinancialInstitution implements Node & FamilyAdmin {
     id: ID!
     name: String!
-    externalFundingAccounts: [ExternalFundingAccount!]!
+    fundingAccounts: [ExternalFundingAccount!]!
   }
 
   """
   A Family FamilyAdmin can be either a ParentUser or a FinancialInstitution
   """
   interface FamilyAdmin {
-    externalFundingAccounts: [ExternalFundingAccount!]!
+    fundingAccounts: [ExternalFundingAccount!]!
   }
 
   type ChildUser implements Node & User {
@@ -133,7 +133,7 @@ const typeDefs = gql`
     child: ChildUser
     balance: Int!
     transactions: [Transaction]
-    rules: [GreenlightRule!]!
+    rules: [Rule!]!
     greenlightAccount: GreenlightAccount!
   }
   type SpendSubAccount implements Node & SubAccount & FundingAccount {
@@ -141,7 +141,7 @@ const typeDefs = gql`
     child: ChildUser
     balance: Int!
     transactions: [Transaction!]!
-    rules: [SpendGreenlightRule!]!
+    rules: [SpendingRule!]!
     greenlightAccount: GreenlightAccount!
   }
   type EarnSubAccount implements Node & SubAccount & FundingAccount {
@@ -159,7 +159,7 @@ const typeDefs = gql`
     greenlightAccount: GreenlightAccount!
   }
 
-  enum GreenlightRuleName {
+  enum RuleName {
     ANYWHERE
     GAS
     ATM
@@ -174,9 +174,9 @@ const typeDefs = gql`
     RETURN
   }
 
-  interface GreenlightRule {
+  interface Rule {
     id: ID!
-    name: [GreenlightRuleName!]!
+    name: RuleName!
     balance: Int!
   }
 
@@ -199,10 +199,10 @@ const typeDefs = gql`
     value: Boolean
   }
 
-  type SpendGreenlightRule implements Node & GreenlightRule {
+  type SpendingRule implements Node & Rule {
     id: ID!
     sub_account: SpendSubAccount!
-    name: [GreenlightRuleName!]!
+    name: RuleName!
     balance: Int!
     overages: Boolean
     changeOptions: [ChangeOption]
@@ -216,7 +216,7 @@ const typeDefs = gql`
     goalAmount: Int!
   }
 
-  # type GiveGreenlightRule implements Node & GreenlightRule {
+  # type GiveRule implements Node & Rule {
   #   id: ID!
   #   charity: String!
   #   balance: Int!
