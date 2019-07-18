@@ -16,7 +16,7 @@ const typeDefs = gql`
   type Family implements Node {
     id: ID!
     children: [ChildUser!]!
-    admins: [FamilyAdmin!]!
+    parents: [FamilyAdmin!]!
   }
 
   """
